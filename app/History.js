@@ -1,54 +1,60 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { useRouter } from 'expo-router'; // Import useRouter for navigation
 import styles from '../assets/styles/HistoryStyles'; // Import the separated styles
+import supabase from './lib/supabaseClient';
+
 
 const History = () => {
   const router = useRouter(); // Initialize the router
+  const [incidents, setIncidents] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchIncidents = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('incidents')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          setError(error.message);
+          console.error('Error fetching incidents:', error);
+        } else {
+          setIncidents(data);
+        }
+      } catch (err) {
+        setError(err.message);
+        console.error('Network Error:', err);
+      }
+    };
+
+    fetchIncidents();
+  }, []);
+
 
   return (
-    <View style={styles.container}>
+       <View style={styles.container}>
       {/* Title */}
       <Text style={styles.title}>HISTORY</Text>
 
+      {/* Error Message */}
+      {error && <Text style={styles.errorMessage}>{error}</Text>}
+
       {/* Incident History List */}
       <ScrollView contentContainerStyle={styles.historyContainer}>
-        {/* Incident Card Items */}
-        <View style={styles.incidentCard}>
-          <Text style={styles.incidentText}>Description of Incident: Broken Garbage Bin</Text>
-          <Text style={styles.incidentText}>Location: Canteen</Text>
-          <Text style={styles.incidentText}>Time & Date: 03/26/2024</Text>
-          <Text style={styles.statusOpen}>Status of Report: Open</Text>
-        </View>
-
-        <View style={styles.incidentCard}>
-          <Text style={styles.incidentText}>Description of Incident: Water pipe burst</Text>
-          <Text style={styles.incidentText}>Location: Library</Text>
-          <Text style={styles.incidentText}>Time & Date: 03/25/2024</Text>
-          <Text style={styles.statusInProgress}>Status of Report: In progress</Text>
-        </View>
-
-        <View style={styles.incidentCard}>
-          <Text style={styles.incidentText}>Description of Incident: Minor Gas Leak</Text>
-          <Text style={styles.incidentText}>Location: CNAHS building</Text>
-          <Text style={styles.incidentText}>Time & Date: 03/24/2024</Text>
-          <Text style={styles.statusResolved}>Status of Report: Resolved</Text>
-        </View>
-
-        <View style={styles.incidentCard}>
-          <Text style={styles.incidentText}>Description of Incident: Small fire in Lab</Text>
-          <Text style={styles.incidentText}>Location: CCJC building</Text>
-          <Text style={styles.incidentText}>Time & Date: 03/22/2024</Text>
-          <Text style={styles.statusResolved}>Status of Report: Resolved</Text>
-        </View>
-
-        <View style={styles.incidentCard}>
-          <Text style={styles.incidentText}>Description of Incident: Broken Window</Text>
-          <Text style={styles.incidentText}>Location: CAFA building</Text>
-          <Text style={styles.incidentText}>Time & Date: 03/19/2024</Text>
-          <Text style={styles.statusResolved}>Status of Report: Resolved</Text>
-        </View>
+        {incidents.map((incident) => (
+          <View key={incident.id} style={styles.incidentCard}>
+            <Text style={styles.incidentText}>Description of Incident: {incident.description}</Text>
+            <Text style={styles.incidentText}>Location: {incident.location}</Text>
+            <Text style={styles.incidentText}>Time & Date: {new Date(incident.date_observed).toLocaleString()}</Text>
+            <Text style={styles[`status${incident.status ? incident.status.replace(' ', '') : 'Unknown'}`]}>
+              Status of Report: {incident.status || 'Unknown'}
+            </Text>
+          </View>
+        ))}
       </ScrollView>
 
       {/* "Report Again" Button */}

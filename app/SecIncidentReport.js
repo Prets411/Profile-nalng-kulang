@@ -152,8 +152,7 @@ const SecIncidentReport = () => {
   
   
 
-  // Function to handle form submission
-  // Function to handle form submission
+
 const handleSubmit = async () => {
   // Validate required fields
   if (!description || !location || !room || !selectedStartDate || !timeObserved) {
